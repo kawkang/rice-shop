@@ -107,7 +107,8 @@ function render() {
     bar.hidden = true;
     $('#app').innerHTML = `
       <header><h1>${esc(m.shopName)}</h1></header>
-      <div class="notice">${esc(m.closedReason || 'ตอนนี้ยังไม่เปิดรับออเดอร์')}</div>`;
+      <div class="notice">${esc(m.closedReason || 'ตอนนี้ยังไม่เปิดรับออเดอร์')}</div>
+      ${m.openTime && m.closeTime ? `<div class="sub">เปิดรับออเดอร์ทุกวัน ${esc(m.openTime)}–${esc(m.closeTime)} น.</div>` : ''}`;
     return;
   }
   const cur = state.current;
@@ -130,7 +131,7 @@ function render() {
   $('#app').innerHTML = `
     <header>
       <h1>${esc(m.shopName)}</h1>
-      <div class="sub">กับข้าววันนี้ · ปิดรับ ${esc(m.closeTime)} น.</div>
+      <div class="sub">กับข้าววันนี้ · รับออเดอร์ ${m.openTime ? esc(m.openTime) + '–' : 'ถึง '}${esc(m.closeTime)} น.</div>
     </header>
     <div class="prices">
       <span>จานละ ${m.prices.base} ฿ (1 อย่าง)</span><span>เพิ่มอย่างละ ${m.prices.step} ฿</span><span>สูงสุด ${max} อย่าง</span>

@@ -247,7 +247,7 @@ function render() {
   const isOpen = !d.closedReason;
   $('#openPill').textContent = isOpen ? 'เปิดรับออเดอร์' : 'ปิดรับ';
   $('#openPill').className = 'pill ' + (isOpen ? 'open' : 'closed');
-  $('#closedReason').textContent = d.closedReason || `ลูกค้าสั่งได้ถึง ${s.close_time} น.`;
+  $('#closedReason').textContent = (d.closedReason ? d.closedReason + ' · ' : '') + `รับออเดอร์ทุกวัน ${s.open_time || '—'}–${s.close_time} น.`;
   $('#toggleOpen').textContent = s.open ? 'ปิดรับชั่วคราว' : 'เปิดรับออเดอร์';
   $('#toggleOpen').className = 'btn ' + (s.open ? 'danger' : '');
   if (document.activeElement !== $('#closeTime')) $('#closeTime').value = s.close_time;
