@@ -30,6 +30,9 @@
   .chip[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
   .chip:disabled{color:var(--muted);text-decoration:line-through;cursor:not-allowed;opacity:.7}
   .chip:not([aria-pressed="true"]):not(:disabled).full{opacity:.45}
+  .pack{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+  .pack-opt{font:inherit;font-size:15px;padding:10px;border-radius:10px;border:1.5px solid var(--line);background:var(--surface);color:var(--fg);cursor:pointer}
+  .pack-opt[aria-checked="true"]{border-color:var(--accent);background:var(--accent-soft);color:var(--accent);font-weight:600}
   .row{display:flex;justify-content:space-between;align-items:center;gap:12px}
   .btn{font:inherit;font-weight:600;border:0;border-radius:12px;padding:12px 16px;cursor:pointer}
   .btn-primary{background:var(--accent);color:var(--accent-ink)}
@@ -71,7 +74,7 @@ const LIFF_ID = '2012577415-QqjJKuHE';                                   // จ�
 const API_URL = 'https://script.google.com/macros/s/AKfycbzeV2BKTBtf2oo3-ehgaQZREoKTUtzRsEWGoQs6w_TgbENirfjxNXXKWnaZmt65moAB/exec'; // Web app URL ของ Apps Script
 /* ============================================ */
 
-const state = { menu: null, current: { items: [] }, cart: [], note: '' };
+const state = { menu: null, current: { items: [], pack: 'จาน' }, cart: [], note: '' };
 const $ = (s) => document.querySelector(s);
 const esc = (s) => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 
@@ -123,7 +126,7 @@ function render() {
       <div class="plate">
         <div class="items">
           <div>จาน ${idx + 1}: ${esc(p.items.join(', '))}</div>
-          <div class="meta">${p.items.length} อย่าง · <button class="x" data-remove="${idx}">ลบ</button></div>
+          <div class="meta">${p.items.length} อย่าง · ใส่${esc(p.pack)} · <button class="x" data-remove="${idx}">ลบ</button></div>
         </div>
         <div class="price">${platePrice(p)} ฿</div>
       </div>`).join('') : '<div class="empty">ยังไม่มีจาน เลือกกับข้าวด้านบนแล้วกด "ใส่ตะกร้า"</div>';
@@ -139,6 +142,9 @@ function render() {
     <section class="card">
       <div class="row"><h2>จานที่ ${state.cart.length + 1}</h2><span class="sub">เลือกแล้ว ${cur.items.length}/${max}</span></div>
       <div class="chips">${chips}</div>
+      <div class="pack" role="radiogroup" aria-label="ใส่ภาชนะ">
+        ${['จาน', 'ถ้วย'].map(k => `<button class="pack-opt" role="radio" data-pack="${k}" aria-checked="${cur.pack === k}">${k === 'จาน' ? '🍽️' : '🥣'} ใส่${k}</button>`).join('')}
+      </div>
       <button class="btn btn-ghost" id="addPlate" ${cur.items.length ? '' : 'disabled'}>
         ${cur.items.length ? `ใส่ตะกร้า · ${curPrice} ฿` : 'เลือกกับข้าวอย่างน้อย 1 อย่าง'}
       </button>
@@ -163,12 +169,14 @@ document.addEventListener('click', (e) => {
     else if (items.length < state.menu.maxItems) items.push(name);
     return render();
   }
+  const pk = e.target.closest('[data-pack]');
+  if (pk) { state.current.pack = pk.dataset.pack; return render(); }
   const rm = e.target.closest('[data-remove]');
   if (rm) { state.cart.splice(Number(rm.dataset.remove), 1); return render(); }
   if (e.target.closest('#addPlate')) {
     if (state.cart.length >= state.menu.maxPlates) return alertBox(`สั่งได้สูงสุด ${state.menu.maxPlates} จานต่อออเดอร์`);
-    state.cart.push({ items: [...state.current.items] });
-    state.current = { items: [] };
+    state.cart.push({ items: [...state.current.items], pack: state.current.pack });
+    state.current = { items: [], pack: state.current.pack };
     return render();
   }
 });

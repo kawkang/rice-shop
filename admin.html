@@ -112,11 +112,13 @@
     <div class="col">
       <section class="card">
         <h2>เปิด / ปิดรับออเดอร์</h2>
+        <div><button class="btn" id="toggleOpen">—</button></div>
         <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
-          <button class="btn" id="toggleOpen">—</button>
-          <label class="muted" for="closeTime">ปิดรับเวลา</label>
+          <label class="muted" for="openTime">เริ่มรับ</label>
+          <input type="time" id="openTime">
+          <label class="muted" for="closeTime">ปิดรับ</label>
           <input type="time" id="closeTime">
-          <button class="btn small ghost" id="saveClose">บันทึก</button>
+          <button class="btn small ghost" id="saveClose">บันทึกเวลา</button>
         </div>
         <div class="muted" id="closedReason"></div>
       </section>
@@ -250,6 +252,7 @@ function render() {
   $('#toggleOpen').textContent = s.open ? 'ปิดรับชั่วคราว' : 'เปิดรับออเดอร์';
   $('#toggleOpen').className = 'btn ' + (s.open ? 'danger' : '');
   if (document.activeElement !== $('#closeTime')) $('#closeTime').value = s.close_time;
+  if (document.activeElement !== $('#openTime')) $('#openTime').value = s.open_time || '';
   $('#syncInfo').textContent = `${d.date} · อัปเดต ${new Date().toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}`;
 
   $('#sOrders').textContent = d.stats.orders;
@@ -259,6 +262,9 @@ function render() {
   // ต้องตัก
   const ic = d.stats.itemCount;
   const cookRows = d.menu.map(i => `<div class="ln"><span>${esc(i.name)}</span><span class="n">${ic[i.name] || 0}</span></div>`);
+  const pk = d.stats.packs || {};
+  cookRows.push(`<div class="ln"><span>🍽️ ใส่จาน</span><span class="n">${pk['จาน'] || 0}</span></div>`);
+  cookRows.push(`<div class="ln"><span>🥣 ใส่ถ้วย</span><span class="n">${pk['ถ้วย'] || 0}</span></div>`);
   $('#cook').innerHTML = cookRows.join('');
 
   // เมนู
@@ -327,7 +333,12 @@ $('#addItem').onclick = () => {
 $('#newItem').onkeydown = e => { if (e.key === 'Enter') $('#addItem').click(); };
 $('#copyLast').onclick = () => act(() => post({ action: 'copy_last_menu' }));
 $('#toggleOpen').onclick = () => act(() => post({ action: 'set_settings', values: { open: !data.settings.open } }));
-$('#saveClose').onclick = () => act(() => post({ action: 'set_settings', values: { close_time: $('#closeTime').value } }));
+$('#saveClose').onclick = () => {
+  const open_time = $('#openTime').value, close_time = $('#closeTime').value;
+  if (!open_time || !close_time) return alert('กรุณาใส่เวลาเริ่มรับและปิดรับ');
+  if (open_time >= close_time) return alert('เวลาเริ่มรับต้องก่อนเวลาปิดรับ');
+  act(() => post({ action: 'set_settings', values: { open_time, close_time } }));
+};
 
 tryLogin();
 </script>
