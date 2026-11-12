@@ -51,11 +51,7 @@
   .order.new .q{color:var(--alert)}
   .order.done{opacity:.55}
   .order.cancelled .q,.order.cancelled .sum{text-decoration:line-through}
-  .order .sum{white-space:pre-line;font-size:19px;line-height:1.55;font-weight:500}
-  .order.ready .q{color:var(--accent)}
-  .btn.ready{font-size:17px;padding:12px 18px;border-radius:12px;margin-top:6px;align-self:flex-start;min-height:48px}
-  .btn.ready.on{background:var(--accent-soft);color:var(--accent);border:1.5px solid var(--accent)}
-  .order .note{background:var(--warn-soft);color:var(--warn);border-radius:8px;padding:2px 8px;font-size:13px;width:fit-content}
+  .order .sum{white-space:pre-line;font-size:19px;line-height:1.55;font-weight:500}  .order .note{background:var(--warn-soft);color:var(--warn);border-radius:8px;padding:2px 8px;font-size:13px;width:fit-content}
   .order .acts{display:flex;flex-direction:column;gap:6px;align-items:stretch}
   .order .total{font-weight:600;font-variant-numeric:tabular-nums;text-align:right}
   .cook .ln,.menu .ln{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid var(--line)}
@@ -105,8 +101,8 @@
         <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap">
           <h2>คิววันนี้</h2>
           <div class="tabs">
-            <button class="btn small on" data-filter="waiting">รอรับ</button>
-            <button class="btn small ghost" data-filter="all">ทั้งหมด</button>
+            <button class="btn small on" data-filter="waiting">คิวที่สั่ง</button>
+            <button class="btn small ghost" data-filter="all">รวมที่ยกเลิก</button>
           </div>
         </div>
         <div id="orders"><div class="muted">ยังไม่มีออเดอร์</div></div>
@@ -277,9 +273,9 @@ function render() {
 
   // คิว (รอรับ: เก่าไปใหม่ / ทั้งหมด: ใหม่ไปเก่า)
   let list = d.orders.slice();
-  if (filter === 'waiting') list = list.filter(o => o.status === 'active' && !o.pickedUp).sort((a, b) => a.queueNum - b.queueNum);
+  if (filter === 'waiting') list = list.filter(o => o.status === 'active').sort((a, b) => a.queueNum - b.queueNum);
   $('#orders').innerHTML = list.length ? list.map(o => {
-    const cls = ['order', newSet.has(o.orderId) ? 'new' : '', o.ready ? 'ready' : '', o.pickedUp ? 'done' : '', o.status === 'cancelled' ? 'cancelled' : ''].join(' ');
+    const cls = ['order', newSet.has(o.orderId) ? 'new' : '', o.status === 'cancelled' ? 'cancelled' : ''].join(' ');
     return `
     <div class="${cls}">
       <div><div class="q">${o.queue}</div><div class="muted">${esc(o.createdAt)}</div></div>
@@ -287,17 +283,14 @@ function render() {
         <div class="sum">${esc(o.summary)}</div>
         ${o.note ? `<div class="note">${esc(o.note)}</div>` : ''}
         <div class="muted">${esc(o.name)}${o.status === 'cancelled' ? ' · ยกเลิกแล้ว' : ''}</div>
-        ${o.status === 'cancelled' ? '' : `<button class="btn ready ${o.ready ? 'on' : ''}" data-act="ready" data-id="${o.orderId}" data-val="${!o.ready}">${o.ready ? '✓ เตรียมอาหารเรียบร้อยแล้ว' : 'เตรียมอาหารเรียบร้อยแล้ว'}</button>`}
       </div>
       <div class="acts">
         <div class="total">${o.total} ฿</div>
         ${o.status === 'cancelled' ? `<button class="btn small ghost" data-act="status" data-id="${o.orderId}" data-val="active">คืนคิว</button>` : `
-        <button class="btn small ${o.paid ? 'on' : 'ghost'}" data-act="paid" data-id="${o.orderId}" data-val="${!o.paid}">${o.paid ? '✓ จ่ายแล้ว' : 'จ่ายแล้ว'}</button>
-        <button class="btn small ${o.pickedUp ? 'on' : 'ghost'}" data-act="picked_up" data-id="${o.orderId}" data-val="${!o.pickedUp}">${o.pickedUp ? '✓ รับแล้ว' : 'รับแล้ว'}</button>
         <button class="btn small danger" data-act="status" data-id="${o.orderId}" data-val="cancelled">ยกเลิก</button>`}
       </div>
     </div>`;
-  }).join('') : `<div class="muted">${filter === 'waiting' ? 'ไม่มีคิวที่รอรับ' : 'ยังไม่มีออเดอร์วันนี้'}</div>`;
+  }).join('') : `<div class="muted">${filter === 'waiting' ? 'ยังไม่มีคิววันนี้' : 'ยังไม่มีออเดอร์วันนี้'}</div>`;
 }
 
 /* ---------- actions ---------- */
