@@ -90,11 +90,9 @@
   .tk.done .tk-f{background:var(--ok-soft)}
   .chip.todo{background:var(--todo-soft);color:var(--bowl)}
   .chip.done{background:var(--ok);color:#fff}
-  .tk-a{padding:10px 14px 12px}
-  .btn.ready{width:100%;padding:12px 14px;font-size:17px;font-weight:600;border-radius:10px;background:var(--ok);border-color:var(--ok);color:#fff}
+  .btn.ready{padding:9px 20px;font-size:16px;font-weight:600;border-radius:10px;background:var(--ok);border-color:var(--ok);color:#fff}
   .btn.ready:hover{filter:brightness(1.05)}
-  .donebar{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 12px;border-radius:10px;background:var(--ok-soft);color:var(--ok);font-weight:600;font-size:15px}
-  .donebar .btn{color:var(--fg2)}
+  .btn.undo{background:var(--surface);color:var(--fg2);border-color:var(--line2)}
   .tk-h{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;padding:14px 14px 10px}
   .tk-q{font-family:var(--num);font-size:34px;font-weight:700;line-height:1;letter-spacing:-.03em}
   .tk.new .tk-q{color:var(--bad)}
@@ -116,8 +114,10 @@
   .tk .sum{white-space:pre-line;font-size:17px;padding:10px 0;border-top:1px dashed var(--line)}
   .tk .note{margin:2px 14px 8px;font-size:13px;color:var(--bowl);background:var(--bowl-soft);border-radius:8px;padding:6px 10px}
   .tk-f{margin-top:auto;display:flex;align-items:center;gap:10px;padding:10px 14px;background:var(--subtle);border-top:1px solid var(--line)}
+  .tk-f .fl{display:flex;flex-direction:column;min-width:0;line-height:1.3}
   .tk-f .who{font-size:13px;color:var(--fg2);min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-  .tk-f .tot{margin-left:auto;font-family:var(--num);font-weight:600;font-size:16px;white-space:nowrap}
+  .tk-f .tot{font-family:var(--num);font-weight:600;font-size:16px;white-space:nowrap}
+  .tk-f .fa{margin-left:auto;display:flex;align-items:center;gap:6px;flex:none}
   .tk.cancelled{opacity:.55}
   .tk.cancelled .tk-q,.tk.cancelled .it,.tk.cancelled .sum{text-decoration:line-through}
   .empty{grid-column:1/-1;text-align:center;color:var(--muted);padding:40px 0;font-size:14px}
@@ -435,13 +435,14 @@ function render() {
       </div>
       <div class="tk-items">${rows}</div>
       ${o.note ? `<div class="note">หมายเหตุ · ${esc(o.note)}</div>` : ''}
-      ${cancelled ? '' : `<div class="tk-a">${done
-        ? `<div class="donebar"><span>✓ ทำเสร็จแล้ว</span><button class="btn text sm" data-act="ready" data-id="${o.orderId}" data-val="false">ยังไม่เสร็จ</button></div>`
-        : `<button class="btn ready" data-act="ready" data-id="${o.orderId}" data-val="true">ทำแล้ว</button>`}</div>`}
       <div class="tk-f">
-        <span class="who">${esc(o.name)}</span>
+        <span class="fl"><span class="who">${esc(o.name)}</span><span class="tot">${o.total} ฿</span></span>
+        <span class="fa">
         ${cancelled ? `<button class="btn ghost sm" data-act="status" data-id="${o.orderId}" data-val="active">คืนคิว</button>` : `<button class="btn text sm" data-act="status" data-id="${o.orderId}" data-val="cancelled">ยกเลิก</button>`}
-        <span class="tot">${o.total} ฿</span>
+        ${cancelled ? '' : done
+          ? `<button class="btn undo sm" data-act="ready" data-id="${o.orderId}" data-val="false">ยังไม่เสร็จ</button>`
+          : `<button class="btn ready" data-act="ready" data-id="${o.orderId}" data-val="true">ทำแล้ว</button>`}
+        </span>
       </div>
     </article>`;
   }).join('') : `<div class="empty">${filter === 'waiting' ? 'ยังไม่มีคิววันนี้' : 'ยังไม่มีออเดอร์วันนี้'}</div>`;
