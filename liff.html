@@ -40,7 +40,9 @@
   .btn:disabled{opacity:.5;cursor:not-allowed}
   .plate{display:flex;justify-content:space-between;gap:12px;align-items:flex-start;padding:10px 0;border-bottom:1px dashed var(--line)}
   .plate:last-child{border-bottom:0}
-  .plate .items{min-width:0}
+  .plate .items{min-width:0;flex:1}
+  .no{flex:none;width:26px;height:26px;border-radius:50%;background:var(--accent);color:var(--accent-ink);font-family:var(--display);font-size:14px;font-weight:700;display:inline-flex;align-items:center;justify-content:center;font-variant-numeric:tabular-nums}
+  h2.cur{display:flex;align-items:center;gap:8px}
   .plate .meta{color:var(--muted);font-size:13px}
   .plate .price{font-variant-numeric:tabular-nums;font-weight:600;white-space:nowrap}
   .x{background:none;border:0;color:var(--danger);font:inherit;font-size:13px;cursor:pointer;padding:0}
@@ -124,12 +126,13 @@ function render() {
   const curPrice = platePrice(cur);
   const cartHtml = state.cart.length ? state.cart.map((p, idx) => `
       <div class="plate">
+        <span class="no">${idx + 1}</span>
         <div class="items">
-          <div>จาน ${idx + 1}: ${esc(p.items.join(', '))}</div>
+          <div>${esc(p.items.join(', '))}</div>
           <div class="meta">${p.items.length} อย่าง · ใส่${esc(p.pack)} · <button class="x" data-remove="${idx}">ลบ</button></div>
         </div>
         <div class="price">${platePrice(p)} ฿</div>
-      </div>`).join('') : '<div class="empty">ยังไม่มีจาน เลือกกับข้าวด้านบนแล้วกด "ใส่ตะกร้า"</div>';
+      </div>`).join('') : '<div class="empty">ยังไม่มีรายการ เลือกกับข้าวด้านบนแล้วกด "ใส่ตะกร้า"</div>';
 
   $('#app').innerHTML = `
     <header>
@@ -140,7 +143,7 @@ function render() {
       <span>จานละ ${m.prices.base} ฿ (1 อย่าง)</span><span>เพิ่มอย่างละ ${m.prices.step} ฿</span><span>สูงสุด ${max} อย่าง</span>
     </div>
     <section class="card">
-      <div class="row"><h2>จานที่ ${state.cart.length + 1}</h2><span class="sub">เลือกแล้ว ${cur.items.length}/${max}</span></div>
+      <div class="row"><h2 class="cur"><span class="no">${state.cart.length + 1}</span>เลือกกับข้าว</h2><span class="sub">เลือกแล้ว ${cur.items.length}/${max}</span></div>
       <div class="chips">${chips}</div>
       <div class="pack" role="radiogroup" aria-label="ใส่ภาชนะ">
         ${['จาน', 'ถ้วย'].map(k => `<button class="pack-opt" role="radio" data-pack="${k}" aria-checked="${cur.pack === k}">${k === 'จาน' ? '🍽️' : '🥣'} ใส่${k}</button>`).join('')}
@@ -156,7 +159,7 @@ function render() {
     </section>`;
 
   bar.hidden = false;
-  $('#barInfo').textContent = state.cart.length ? `${state.cart.length} จาน · จ่ายตอนรับข้าว` : 'ยังไม่มีจานในตะกร้า';
+  $('#barInfo').textContent = state.cart.length ? `${state.cart.length} รายการ · จ่ายตอนรับข้าว` : 'ยังไม่มีรายการในตะกร้า';
   $('#barTotal').textContent = cartTotal() + ' ฿';
   $('#submitBtn').disabled = !state.cart.length;
 }

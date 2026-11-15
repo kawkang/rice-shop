@@ -50,8 +50,17 @@
   .order .q{font-family:var(--display);font-size:30px;font-weight:700;line-height:1.1;font-variant-numeric:tabular-nums}
   .order.new .q{color:var(--alert)}
   .order.done{opacity:.55}
-  .order.cancelled .q,.order.cancelled .sum{text-decoration:line-through}
-  .order .sum{white-space:pre-line;font-size:19px;line-height:1.55;font-weight:500}  .order .note{background:var(--warn-soft);color:var(--warn);border-radius:8px;padding:2px 8px;font-size:13px;width:fit-content}
+  .order.cancelled .q,.order.cancelled .sum,.order.cancelled .it{text-decoration:line-through}
+  .order .sum{white-space:pre-line;font-size:19px;line-height:1.55;font-weight:500}
+  .plates{display:flex;flex-direction:column;gap:8px}
+  .pl{display:flex;align-items:center;gap:10px}
+  .pl .no{flex:none;width:28px;height:28px;border-radius:50%;background:var(--fg);color:#fff;font-family:var(--display);font-size:15px;font-weight:700;display:flex;align-items:center;justify-content:center}
+  .pl .it{font-size:19px;font-weight:500;line-height:1.4;min-width:0}
+  .pl .pr{color:var(--muted);font-size:14px;margin-left:auto;padding-left:8px;font-variant-numeric:tabular-nums;white-space:nowrap}
+  .pk{flex:none;display:inline-flex;align-items:center;gap:4px;font-size:13px;font-weight:600;border-radius:999px;padding:3px 10px;white-space:nowrap}
+  .pk.plate{background:#e8f0fb;color:#2b5797}
+  .pk.bowl{background:var(--warn-soft);color:var(--warn)}
+  .order .note{background:var(--warn-soft);color:var(--warn);border-radius:8px;padding:2px 8px;font-size:13px;width:fit-content}
   .order .acts{display:flex;flex-direction:column;gap:6px;align-items:stretch}
   .order .total{font-weight:600;font-variant-numeric:tabular-nums;text-align:right}
   .cook .ln,.menu .ln{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid var(--line)}
@@ -93,7 +102,7 @@
 
       <div class="stats">
         <div class="stat"><b id="sOrders">0</b><span>ออเดอร์</span></div>
-        <div class="stat"><b id="sPlates">0</b><span>จาน</span></div>
+        <div class="stat"><b id="sPlates">0</b><span>รายการ</span></div>
         <div class="stat"><b id="sRevenue">0</b><span>ยอดขาย (บาท)</span></div>
       </div>
 
@@ -286,7 +295,10 @@ function render() {
     <div class="${cls}">
       <div><div class="q">${o.queue}</div><div class="muted">${esc(o.createdAt)}</div></div>
       <div style="display:flex;flex-direction:column;gap:4px;min-width:0">
-        <div class="sum">${esc(o.summary)}</div>
+        ${o.plates && o.plates.length ? `<div class="plates">${o.plates.map((p, i) => {
+          const bowl = p.pack === 'ถ้วย';
+          return `<div class="pl"><span class="no">${i + 1}</span><span class="it">${esc((p.items || []).join(', '))}</span><span class="pk ${bowl ? 'bowl' : 'plate'}">${bowl ? '🥣 ใส่ถ้วย' : '🍽️ ใส่จาน'}</span><span class="pr">${p.price} ฿</span></div>`;
+        }).join('')}</div>` : `<div class="sum">${esc(o.summary)}</div>`}
         ${o.note ? `<div class="note">${esc(o.note)}</div>` : ''}
         <div class="muted">${esc(o.name)}${o.status === 'cancelled' ? ' · ยกเลิกแล้ว' : ''}</div>
       </div>
