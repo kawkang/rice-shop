@@ -12,6 +12,7 @@
     --bg:#f7f7f8; --surface:#ffffff; --subtle:#f2f2f4; --fg:#111114; --fg2:#3f3f46; --muted:#8a8a94; --line:#e7e7ea; --line2:#d9d9de;
     --ok:#16a34a; --ok-soft:#e9f8ee; --bad:#dc2626; --bad-soft:#fdecec;
     --plate:#2563eb; --plate-soft:#edf3ff; --bowl:#b45309; --bowl-soft:#fff5e6;
+    --todo:#f59e0b; --todo-soft:#fff7e6;
     --shadow:0 1px 2px rgba(16,16,20,.04),0 1px 1px rgba(16,16,20,.03);
     --num:"Inter","IBM Plex Sans Thai",system-ui,sans-serif;
     --body:"IBM Plex Sans Thai","Inter",system-ui,sans-serif;
@@ -22,6 +23,7 @@
       --bg:#0c0c0e; --surface:#151518; --subtle:#1c1c20; --fg:#f4f4f5; --fg2:#d4d4d8; --muted:#8b8b95; --line:#26262b; --line2:#34343a;
       --ok:#22c55e; --ok-soft:rgba(34,197,94,.12); --bad:#f87171; --bad-soft:rgba(248,113,113,.12);
       --plate:#7aa2ff; --plate-soft:rgba(122,162,255,.12); --bowl:#f5b453; --bowl-soft:rgba(245,180,83,.12);
+      --todo:#f59e0b; --todo-soft:rgba(245,158,11,.12);
       --shadow:none; color-scheme:dark;
     }
   }
@@ -80,8 +82,19 @@
   .seg .c{font-family:var(--num);font-size:12px;color:var(--muted)}
   .count{font-family:var(--num);font-size:12px;font-weight:600;background:var(--subtle);color:var(--fg2);border-radius:6px;padding:1px 7px;margin-left:6px}
   #orders{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:12px;padding:14px}
-  .tk{position:relative;border:1px solid var(--line);border-radius:12px;background:var(--surface);display:flex;flex-direction:column;overflow:hidden}
-  .tk.new{border-color:var(--bad);box-shadow:0 0 0 3px var(--bad-soft)}
+  .tk{position:relative;border:2px solid var(--line);border-radius:12px;background:var(--surface);display:flex;flex-direction:column;overflow:hidden}
+  .tk.todo{border-color:var(--todo)}
+  .tk.todo.new{box-shadow:0 0 0 4px var(--todo-soft)}
+  .tk.done{border-color:var(--ok)}
+  .tk.done .tk-q{color:var(--ok)}
+  .tk.done .tk-f{background:var(--ok-soft)}
+  .chip.todo{background:var(--todo-soft);color:var(--bowl)}
+  .chip.done{background:var(--ok);color:#fff}
+  .tk-a{padding:10px 14px 12px}
+  .btn.ready{width:100%;padding:12px 14px;font-size:17px;font-weight:600;border-radius:10px;background:var(--ok);border-color:var(--ok);color:#fff}
+  .btn.ready:hover{filter:brightness(1.05)}
+  .donebar{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 12px;border-radius:10px;background:var(--ok-soft);color:var(--ok);font-weight:600;font-size:15px}
+  .donebar .btn{color:var(--fg2)}
   .tk-h{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;padding:14px 14px 10px}
   .tk-q{font-family:var(--num);font-size:34px;font-weight:700;line-height:1;letter-spacing:-.03em}
   .tk.new .tk-q{color:var(--bad)}
@@ -210,7 +223,7 @@
         <div class="card-h">
           <h2>คิววันนี้<span class="count" id="qCount">0</span></h2>
           <div class="seg" role="group" aria-label="ตัวกรองคิว">
-            <button data-filter="waiting" aria-pressed="true">รอทำ <span class="c" id="cWait">0</span></button>
+            <button data-filter="waiting" aria-pressed="true">คิว <span class="c" id="cWait">0</span></button>
             <button data-filter="all" aria-pressed="false">ทั้งหมด <span class="c" id="cAll">0</span></button>
           </div>
         </div>
@@ -403,12 +416,13 @@ function render() {
   const active = d.orders.filter(o => o.status === 'active');
   $('#cWait').textContent = active.length;
   $('#cAll').textContent = d.orders.length;
-  $('#qCount').textContent = active.length;
+  $('#qCount').textContent = active.filter(o => !o.ready).length;
   let list = d.orders.slice();
   if (filter === 'waiting') list = active.sort((a, b) => a.queueNum - b.queueNum);
   $('#orders').innerHTML = list.length ? list.map(o => {
     const isNew = newSet.has(o.orderId), cancelled = o.status === 'cancelled';
-    const cls = ['tk', isNew ? 'new' : '', cancelled ? 'cancelled' : ''].join(' ');
+    const done = !!o.ready;
+    const cls = ['tk', cancelled ? 'cancelled' : done ? 'done' : 'todo', isNew && !done ? 'new' : ''].join(' ');
     const rows = o.plates && o.plates.length ? o.plates.map((p, i) => {
       const bowl = p.pack === 'ถ้วย';
       return `<div class="row"><span class="no">${i + 1}</span><span class="it">${esc((p.items || []).join(', '))}</span><span class="rt"><span class="pk ${bowl ? 'bowl' : 'plate'}">${bowl ? 'ใส่ถ้วย' : 'ใส่จาน'}</span><span class="pr">${p.price}</span></span></div>`;
@@ -417,17 +431,20 @@ function render() {
     <article class="${cls}">
       <div class="tk-h">
         <span class="tk-q">${o.queue}</span>
-        <span class="tk-meta">${isNew ? '<span class="chip new">ใหม่</span>' : cancelled ? '<span class="chip x">ยกเลิกแล้ว</span>' : ''}<span class="tk-time">${esc(o.createdAt)}</span></span>
+        <span class="tk-meta">${cancelled ? '<span class="chip x">ยกเลิกแล้ว</span>' : done ? '<span class="chip done">✓ ทำแล้ว</span>' : isNew ? '<span class="chip new">ใหม่</span>' : '<span class="chip todo">รอทำ</span>'}<span class="tk-time">${esc(o.createdAt)}</span></span>
       </div>
       <div class="tk-items">${rows}</div>
       ${o.note ? `<div class="note">หมายเหตุ · ${esc(o.note)}</div>` : ''}
+      ${cancelled ? '' : `<div class="tk-a">${done
+        ? `<div class="donebar"><span>✓ ทำเสร็จแล้ว</span><button class="btn text sm" data-act="ready" data-id="${o.orderId}" data-val="false">ยังไม่เสร็จ</button></div>`
+        : `<button class="btn ready" data-act="ready" data-id="${o.orderId}" data-val="true">ทำแล้ว</button>`}</div>`}
       <div class="tk-f">
         <span class="who">${esc(o.name)}</span>
         ${cancelled ? `<button class="btn ghost sm" data-act="status" data-id="${o.orderId}" data-val="active">คืนคิว</button>` : `<button class="btn text sm" data-act="status" data-id="${o.orderId}" data-val="cancelled">ยกเลิก</button>`}
         <span class="tot">${o.total} ฿</span>
       </div>
     </article>`;
-  }).join('') : `<div class="empty">${filter === 'waiting' ? 'ยังไม่มีคิวที่รอทำ' : 'ยังไม่มีออเดอร์วันนี้'}</div>`;
+  }).join('') : `<div class="empty">${filter === 'waiting' ? 'ยังไม่มีคิววันนี้' : 'ยังไม่มีออเดอร์วันนี้'}</div>`;
 }
 
 /* ---------- actions ---------- */
