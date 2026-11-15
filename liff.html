@@ -238,7 +238,7 @@ function render() {
 
   $('#app').innerHTML = `
     <header class="hero">
-      <div class="logo"><img src="logo.png" alt="${esc(m.shopName)}"></div>
+      <div class="logo"><img src="logo.png?v=2" alt="${esc(m.shopName)}"></div>
       <div>
         <h1>${esc(m.shopName)}</h1>
         <span class="status">${emo('🟢')} เปิดรับออเดอร์ ${m.openTime ? `<b>${esc(m.openTime)}</b>–` : 'ถึง '}<b>${esc(m.closeTime)}</b> น.</span>
