@@ -10,8 +10,8 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 <style>
   :root{
-    --bg:#f3faf6; --surface:#ffffff; --soft:#e8f5ee; --soft2:#f1f8f4; --fg:#2c3a33; --fg2:#4b5c53; --muted:#8fa197; --line:#dcede3; --line2:#c4e0d0;
-    --pri:#5fbf92; --pri2:#86d4ae; --pri-ink:#ffffff; --pri-soft:#e0f4ea; --pri-deep:#3a9a6e;
+    --bg:#c3e4f6; --surface:#ffffff; --soft:#f1ecfb; --soft2:#f6f3fd; --fg:#4a4a8c; --fg2:#5f5f98; --muted:#9494bd; --line:#e6e0f5; --line2:#d3c8ee;
+    --pri:#ee86b3; --pri2:#f6a8ca; --pri-ink:#ffffff; --pri-soft:#fde7f1; --pri-deep:#d75f98;
     --mint:#3fb68b; --mint-soft:#e3f6ee; --sky:#5aa6e8; --sky-soft:#e6f2fc; --honey:#f0a63a; --honey-soft:#fff3dc;
     --danger:#e2566b; --danger-soft:#fde8ec;
     --round:"Mali","IBM Plex Sans Thai Looped",system-ui,sans-serif;
@@ -30,7 +30,7 @@
   /* hero */
   .hero{display:flex;align-items:center;gap:14px;padding:2px 2px 0}
   .blob{flex:none;width:64px;height:64px;border-radius:24px 28px 22px 30px;background:linear-gradient(145deg,#c9ecd9,#ecf8f1);display:grid;place-items:center;font-size:34px;box-shadow:0 6px 16px rgba(76,170,128,.18);transform:rotate(-4deg)}
-  .logo{flex:none;width:68px;height:68px;border-radius:18px;overflow:hidden;box-shadow:0 6px 16px rgba(76,170,128,.25);background:#b4ead4}
+  .logo{flex:none;width:68px;height:68px;border-radius:18px;overflow:hidden;box-shadow:0 6px 16px rgba(76,170,128,.25);background:#c3e4f6}
   .logo img{width:100%;height:100%;display:block}
   .hero h1{font-size:24px}
   .status{display:inline-flex;align-items:center;gap:6px;margin-top:4px;background:var(--mint-soft);color:var(--mint);border-radius:999px;padding:3px 12px 3px 10px;font-size:13px;font-weight:600}
@@ -117,6 +117,34 @@
   .closed .msg{color:var(--fg2);font-size:15px;max-width:300px;white-space:pre-line;line-height:1.65}
   .closed .pill b{color:var(--fg)}
   .closed .btn{margin-top:10px;min-width:200px}
+
+  /* ===== ธีมท้องฟ้าพาสเทล ===== */
+  html,body{background:#c3e4f6}
+  body{background:linear-gradient(180deg,#bfe2f6 0%,#c9e8f8 55%,#d6eefa 100%) fixed}
+  .sky{position:fixed;inset:0;z-index:0;overflow:hidden;pointer-events:none}
+  .sky i{position:absolute;border-radius:50%;display:block}
+  .sky .pk{background:#fbb8d6}.sky .lv{background:#e8d2f7}.sky .wt{background:#eef6fd}.sky .wh{background:#fff}
+  .sky .st{color:#fbe9a0;font-style:normal;font-size:22px;border-radius:0}
+  .sky .dt{width:10px;height:10px}
+  main{position:relative;z-index:1}
+  .bar{z-index:5}
+  .card{border:2px solid rgba(255,255,255,.9);box-shadow:0 10px 28px rgba(90,100,170,.12)}
+  .prices div{border:2px solid rgba(255,255,255,.9);box-shadow:0 6px 16px rgba(90,100,170,.08)}
+  .hero h1{color:#56579c;text-shadow:2px 2px 0 #fff,-2px -2px 0 #fff,2px -2px 0 #fff,-2px 2px 0 #fff,0 3px 0 #fff}
+  .hero .sub{color:#5f6aa3}
+  .logo{border:3px solid #fff;box-shadow:0 8px 18px rgba(90,100,170,.22)}
+  .status{background:#fff;color:#3fa47f}
+  .count b{color:var(--pri-deep)}
+  .no{background:#8f8fd6}
+  .item[aria-pressed="true"] .ck{background:var(--pri);border-color:var(--pri)}
+  .btn-pri{box-shadow:0 6px 16px rgba(230,110,160,.35)}
+  .bar{background:rgba(255,255,255,.92);border-top:2px solid #fff;box-shadow:0 -6px 20px rgba(90,100,170,.12)}
+  .queue{color:var(--pri);text-shadow:0 4px 0 #fff}
+  .done h1,.closed h1{color:#56579c}
+  .closed .shop{color:#5f6aa3}
+  .pill{border:2px solid #fff}
+  .bigblob{box-shadow:0 10px 26px rgba(90,100,170,.18);border:3px solid #fff}
+  .done .bigblob{background:linear-gradient(145deg,#fcd3e5,#fff0f6)}
   .payopt{display:grid;grid-template-columns:1fr 1fr;gap:8px}
   .payopt button{display:flex;flex-direction:column;align-items:center;gap:2px;padding:12px 8px;border-radius:18px;border:1.5px solid var(--line);background:var(--surface);font-weight:600;font-size:15px;color:var(--fg2);cursor:pointer}
   .payopt button small{font-weight:400;font-size:12px;color:var(--muted)}
@@ -140,6 +168,13 @@
 </style>
 </head>
 <body>
+<div class="sky" aria-hidden="true">
+  <i class="pk" style="width:150px;height:150px;left:-50px;top:-60px"></i><i class="pk" style="width:110px;height:110px;left:60px;top:-55px"></i><i class="pk" style="width:80px;height:80px;left:-30px;top:60px"></i>
+  <i class="lv" style="width:140px;height:140px;right:-40px;top:-50px"></i><i class="lv" style="width:100px;height:100px;right:70px;top:-60px"></i><i class="lv" style="width:70px;height:70px;right:-20px;top:70px"></i>
+  <i class="wt" style="width:46px;height:46px;left:46%;top:24px"></i><i class="wt" style="width:34px;height:34px;left:calc(46% + 30px);top:36px"></i><i class="wt" style="width:30px;height:30px;left:calc(46% - 18px);top:42px"></i>
+  <i class="st" style="left:62%;top:96px">★</i><i class="dt" style="background:#fbe9a0;right:16%;top:40%"></i><i class="dt" style="background:#cdf0dc;left:8%;top:55%"></i><i class="dt" style="background:#fbe9a0;left:30%;top:78%"></i>
+  <i class="wh" style="width:200px;height:200px;left:-60px;bottom:-130px"></i><i class="wh" style="width:220px;height:220px;left:30%;bottom:-160px"></i><i class="wh" style="width:200px;height:200px;right:-50px;bottom:-130px"></i>
+</div>
 <main id="app">
   <div class="center" id="loading"><span class="emo" style="font-size:36px">🍚</span><span class="sub">กำลังโหลดเมนู…</span></div>
 </main>
@@ -238,7 +273,7 @@ function render() {
 
   $('#app').innerHTML = `
     <header class="hero">
-      <div class="logo"><img src="logo.png?v=2" alt="${esc(m.shopName)}"></div>
+      <div class="logo"><img src="logo.png?v=3" alt="${esc(m.shopName)}"></div>
       <div>
         <h1>${esc(m.shopName)}</h1>
         <span class="status">${emo('🟢')} เปิดรับออเดอร์ ${m.openTime ? `<b>${esc(m.openTime)}</b>–` : 'ถึง '}<b>${esc(m.closeTime)}</b> น.</span>
