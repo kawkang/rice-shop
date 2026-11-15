@@ -7,6 +7,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Mali:wght@500;600;700&family=IBM+Plex+Sans+Thai+Looped:wght@400;500;600&display=swap">
 <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 <style>
   :root{
     --bg:#f3faf6; --surface:#ffffff; --soft:#e8f5ee; --soft2:#f1f8f4; --fg:#2c3a33; --fg2:#4b5c53; --muted:#8fa197; --line:#dcede3; --line2:#c4e0d0;
@@ -114,6 +115,25 @@
   .closed .msg{color:var(--fg2);font-size:15px;max-width:300px;white-space:pre-line;line-height:1.65}
   .closed .pill b{color:var(--fg)}
   .closed .btn{margin-top:10px;min-width:200px}
+  .payopt{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+  .payopt button{display:flex;flex-direction:column;align-items:center;gap:2px;padding:12px 8px;border-radius:18px;border:1.5px solid var(--line);background:var(--surface);font-weight:600;font-size:15px;color:var(--fg2);cursor:pointer}
+  .payopt button small{font-weight:400;font-size:12px;color:var(--muted)}
+  .payopt button .emo{font-size:24px}
+  .payopt button[aria-checked="true"]{border-color:var(--pri2);background:var(--pri-soft);color:var(--pri-deep)}
+  .pay{display:flex;flex-direction:column;gap:12px;align-items:center;padding-top:4px}
+  .pay-h{display:flex;align-items:center;gap:10px;font-family:var(--round);font-weight:700;font-size:18px}
+  .pay-h b{color:var(--pri)}
+  .qrcard{align-self:stretch;background:var(--surface);border:1.5px solid var(--line);border-radius:26px;padding:18px;display:flex;flex-direction:column;align-items:center;gap:10px;box-shadow:0 8px 24px rgba(60,120,90,.07)}
+  .ppbadge{background:#0e3c5c;color:#fff;border-radius:12px;padding:6px 14px;font-weight:700;font-size:14px;letter-spacing:.02em}
+  #qr{padding:10px;background:#fff;border-radius:14px;border:1.5px solid var(--line);line-height:0}
+  #qr img,#qr canvas{width:200px;height:200px}
+  .amt{font-family:var(--round);font-size:34px;font-weight:700;color:var(--pri-deep);line-height:1}
+  .steps{font-size:13px;color:var(--fg2);display:flex;flex-direction:column;gap:4px;align-self:stretch;background:var(--soft2);border-radius:14px;padding:10px 12px}
+  .link{background:none;border:0;color:var(--muted);text-decoration:underline;font-size:14px;cursor:pointer}
+  .chk{display:flex;flex-direction:column;gap:8px;align-self:stretch}
+  .chk div{display:flex;align-items:center;gap:10px;background:var(--soft2);border-radius:14px;padding:10px 12px;font-size:14px}
+  .chk b{margin-left:auto;color:var(--pri-deep)}
+  .paid{display:inline-flex;align-items:center;gap:6px;background:var(--pri);color:#fff;border-radius:999px;padding:6px 16px;font-family:var(--round);font-weight:700}
   [hidden]{display:none!important}
 </style>
 </head>
@@ -135,7 +155,7 @@ const LIFF_ID = '2012577415-QqjJKuHE';                                   // จ�
 const API_URL = 'https://script.google.com/macros/s/AKfycbzeV2BKTBtf2oo3-ehgaQZREoKTUtzRsEWGoQs6w_TgbENirfjxNXXKWnaZmt65moAB/exec'; // Web app URL ของ Apps Script
 /* ============================================ */
 
-const state = { menu: null, current: { items: [], pack: 'จาน' }, cart: [], note: '' };
+const state = { menu: null, current: { items: [], pack: 'จาน' }, cart: [], note: '', pay: 'cash' };
 const $ = (s) => document.querySelector(s);
 const esc = (s) => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const emo = (e) => `<span class="emo" aria-hidden="true">${e}</span>`;
@@ -242,10 +262,18 @@ function render() {
       <div class="card-h"><h2>${emo('🧺')} ตะกร้าของฉัน</h2><span class="count">${state.cart.length} รายการ</span></div>
       <div>${cartHtml}</div>
       <div class="note">${emo('📝')}<textarea id="note" rows="1" maxlength="100" placeholder="หมายเหตุ เช่น ไม่เผ็ด แยกน้ำแกง">${esc(state.note)}</textarea></div>
-    </section>`;
+    </section>
+    ${m.qrPay ? `<section class="card">
+      <div class="card-h"><h2>${emo('💳')} จ่ายยังไงดี</h2></div>
+      <div class="payopt" role="radiogroup" aria-label="วิธีจ่ายเงิน">
+        <button role="radio" data-pay="cash" aria-checked="${state.pay === 'cash'}">${emo('💵')}จ่ายตอนรับ<small>เงินสด/โอนหน้าร้าน</small></button>
+        <button role="radio" data-pay="qr" aria-checked="${state.pay === 'qr'}">${emo('📱')}สแกนจ่าย QR<small>พร้อมเพย์ จ่ายเลย</small></button>
+      </div>
+    </section>` : ''}`;
 
   bar.hidden = false;
-  $('#barInfo').textContent = state.cart.length ? `🧾 ${state.cart.length} รายการ · จ่ายตอนรับข้าว` : 'ยังไม่มีรายการในตะกร้า';
+  if (!m.qrPay) state.pay = 'cash';
+  $('#barInfo').textContent = state.cart.length ? `🧾 ${state.cart.length} รายการ · ${state.pay === 'qr' ? 'สแกนจ่าย QR' : 'จ่ายตอนรับข้าว'}` : 'ยังไม่มีรายการในตะกร้า';
   $('#barTotal').textContent = cartTotal() + ' ฿';
   $('#submitBtn').disabled = !state.cart.length;
 }
@@ -258,6 +286,8 @@ document.addEventListener('click', (e) => {
     else if (items.length < state.menu.maxItems) items.push(name);
     return render();
   }
+  const py = e.target.closest('[data-pay]');
+  if (py) { state.pay = py.dataset.pay; return render(); }
   const pk = e.target.closest('[data-pack]');
   if (pk) { state.current.pack = pk.dataset.pack; return render(); }
   const rm = e.target.closest('[data-remove]');
@@ -284,7 +314,7 @@ $('#submitBtn').addEventListener('click', async () => {
   const btn = $('#submitBtn');
   btn.disabled = true; btn.textContent = 'กำลังส่ง…';
   try {
-    const res = await api({ action: 'order', idToken: liff.getIDToken(), plates: state.cart, note: state.note });
+    const res = await api({ action: 'order', idToken: liff.getIDToken(), plates: state.cart, note: state.note, payMethod: state.pay });
     if (!res.ok) throw new Error(res.error);
     // ส่งข้อความเข้าแชท → บอทตอบเลขคิวกลับ (reply ฟรี) และแอดมินเห็นในแชท
     if (liff.isInClient()) {
@@ -292,7 +322,7 @@ $('#submitBtn').addEventListener('click', async () => {
         await liff.sendMessages([{ type: 'text', text: `ยืนยันออเดอร์ #${res.code}\n${res.summary}\nรวม ${res.total} บาท` }]);
       } catch (_) { /* ส่งเข้าแชทไม่ได้ก็ไม่เป็นไร ออเดอร์บันทึกแล้ว */ }
     }
-    showDone(res);
+    if (res.payMethod === 'qr' && res.qr) showPay(res); else showDone(res);
   } catch (e) {
     btn.disabled = false; btn.textContent = 'ยืนยันสั่ง';
     alertBox(e.message || 'สั่งไม่สำเร็จ ลองใหม่อีกครั้ง');
@@ -300,6 +330,89 @@ $('#submitBtn').addEventListener('click', async () => {
     try { state.menu = await (await fetch(API_URL + '?action=menu')).json(); render(); } catch (_) {}
   }
 });
+
+/* ---------- จ่ายด้วย QR พร้อมเพย์ + แนบสลิป ---------- */
+function showPay(res, err) {
+  $('#bar').hidden = true;
+  $('#app').innerHTML = `
+    <section class="pay">
+      <div class="pay-h">${emo('🎉')} รับออเดอร์แล้ว · คิว <b>${esc(res.queue)}</b></div>
+      ${err ? `<div class="notice" style="align-self:stretch">⚠️ ${esc(err)}</div>` : ''}
+      <div class="qrcard">
+        <span class="ppbadge">PromptPay พร้อมเพย์</span>
+        <div id="qr"></div>
+        <div class="sub">ยอดที่ต้องจ่าย</div>
+        <div class="amt">${Number(res.total).toFixed(2)} ฿</div>
+        <div class="sub" style="margin-top:-4px">${esc(state.menu.shopName)}</div>
+        <div class="steps"><span>1️⃣ แคปหน้าจอ หรือสแกนด้วยแอปธนาคาร</span><span>2️⃣ โอนตามยอด (ยอดขึ้นให้เอง)</span><span>3️⃣ กด "แนบสลิป" ด้านล่าง</span></div>
+      </div>
+      <input type="file" id="slipFile" accept="image/*" hidden>
+      <button class="btn btn-pri" id="slipBtn" style="align-self:stretch">${emo('📎')} แนบสลิป</button>
+      <button class="link" id="cashBtn">ขอจ่ายตอนรับแทน</button>
+    </section>`;
+  try { new QRCode($('#qr'), { text: res.qr, width: 400, height: 400, correctLevel: QRCode.CorrectLevel.M }); }
+  catch (_) { $('#qr').textContent = 'สร้าง QR ไม่ได้ กรุณาจ่ายตอนรับ'; }
+  $('#slipBtn').onclick = () => $('#slipFile').click();
+  $('#slipFile').onchange = async (e) => {
+    const file = e.target.files && e.target.files[0];
+    if (!file) return;
+    const btn = $('#slipBtn');
+    btn.disabled = true; btn.textContent = 'กำลังเช็กสลิป…';
+    try {
+      const image = await fileToJpeg(file);
+      const r = await api({ action: 'pay_qr', idToken: liff.getIDToken(), orderId: res.code, image });
+      if (!r.ok) throw new Error(r.error);
+      if (liff.isInClient()) {
+        try { await liff.sendMessages([{ type: 'text', text: `ชำระเงินแล้ว #${res.code}` }]); } catch (_) {}
+      }
+      showPaid(res, r);
+    } catch (er) {
+      showPay(res, er.message || 'เช็กสลิปไม่สำเร็จ ลองใหม่อีกครั้ง');
+    }
+  };
+  $('#cashBtn').onclick = async () => {
+    try { await api({ action: 'pay_cash', idToken: liff.getIDToken(), orderId: res.code }); } catch (_) {}
+    showDone(res);
+  };
+}
+
+/** ย่อรูปสลิปเป็น JPEG (ไม่เกิน 2000px) แล้วแปลงเป็น base64 */
+function fileToJpeg(file, max = 2000) {
+  return new Promise((ok, bad) => {
+    const img = new Image(), url = URL.createObjectURL(file);
+    img.onload = () => {
+      const k = Math.min(1, max / Math.max(img.width, img.height));
+      const c = document.createElement('canvas');
+      c.width = Math.round(img.width * k); c.height = Math.round(img.height * k);
+      const g = c.getContext('2d');
+      g.fillStyle = '#fff'; g.fillRect(0, 0, c.width, c.height);
+      g.drawImage(img, 0, 0, c.width, c.height);
+      URL.revokeObjectURL(url);
+      ok(c.toDataURL('image/jpeg', 0.92));
+    };
+    img.onerror = () => { URL.revokeObjectURL(url); bad(new Error('เปิดรูปไม่ได้ ลองเลือกรูปสลิปใหม่')); };
+    img.src = url;
+  });
+}
+
+function showPaid(res, r) {
+  $('#bar').hidden = true;
+  $('#app').innerHTML = `
+    <section class="done">
+      <div class="bigblob">${emo('✅')}</div>
+      <h1>ชำระเงินเรียบร้อย!</h1>
+      <span class="paid">✓ จ่ายแล้ว ${r.amount || res.total} ฿</span>
+      <div class="chk" style="margin-top:6px">
+        <div>${emo('💰')}ยอดเงินตรง<b>${Number(r.amount || res.total).toFixed(2)} ฿</b></div>
+        <div>${emo('🏪')}โอนเข้าบัญชีร้าน<b>✓</b></div>
+        <div>${emo('📅')}สลิปวันนี้${r.time ? ' ' + esc(r.time) + ' น.' : ''}<b>✓</b></div>
+        <div>${emo('🔒')}สลิปนี้ยังไม่เคยใช้<b>✓</b></div>
+      </div>
+      <div class="sub" style="margin-top:4px">คิว <b style="color:var(--pri-deep)">${esc(res.queue)}</b> · มารับได้เลย ไม่ต้องจ่ายเพิ่ม</div>
+      <button class="btn btn-pri" id="closeBtn">${emo('💬')} กลับไปที่แชท</button>
+    </section>`;
+  $('#closeBtn').addEventListener('click', () => liff.isInClient() ? liff.closeWindow() : location.reload());
+}
 
 function showDone(res) {
   $('#bar').hidden = true;

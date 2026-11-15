@@ -116,6 +116,10 @@
   .tk-f .fl{display:flex;flex-direction:column;min-width:0;line-height:1.3}
   .tk-f .who{font-size:13px;color:var(--fg2);min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
   .tk-f .tot{font-family:var(--num);font-weight:600;font-size:16px;white-space:nowrap}
+  .payt{display:inline-flex;align-items:center;gap:4px;font-size:12px;font-weight:600;border-radius:6px;padding:2px 8px;margin-top:3px;width:fit-content;white-space:nowrap}
+  .payt.qr{background:var(--ok-soft);color:var(--ok)}
+  .payt.cash{background:var(--bowl-soft);color:var(--bowl)}
+  .payt.wait{background:var(--plate-soft);color:var(--plate)}
   .tk-f .fa{margin-left:auto;display:flex;align-items:center;gap:6px;flex:none}
   .tk.cancelled{opacity:.55}
   .tk.cancelled .tk-q,.tk.cancelled .it,.tk.cancelled .sum{text-decoration:line-through}
@@ -465,7 +469,7 @@ function render() {
       <div class="tk-items">${rows}</div>
       ${o.note ? `<div class="note">หมายเหตุ · ${esc(o.note)}</div>` : ''}
       <div class="tk-f">
-        <span class="fl"><span class="who">${esc(o.name)}</span><span class="tot">${o.total} ฿</span></span>
+        <span class="fl"><span class="who">${esc(o.name)}</span><span class="tot">${o.total} ฿</span>${cancelled ? '' : o.paid ? `<span class="payt qr">✓ จ่าย${o.payMethod === 'qr' ? ' QR' : ''}แล้ว</span>` : o.payMethod === 'qr' ? '<span class="payt wait">⏳ รอสลิป QR</span>' : `<span class="payt cash">💵 เก็บเงิน ${o.total} ฿</span>`}</span>
         <span class="fa">
         ${cancelled ? `<button class="btn ghost sm" data-act="status" data-id="${o.orderId}" data-val="active">คืนคิว</button>` : `<button class="btn text sm" data-act="status" data-id="${o.orderId}" data-val="cancelled">ยกเลิก</button>`}
         ${cancelled ? '' : done
