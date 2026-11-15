@@ -148,6 +148,12 @@
   .menu .ln:first-child{border-top:0}
   .menu .name{flex:1;font-size:14px;min-width:0}
   .menu .ln.out .name{color:var(--muted);text-decoration:line-through}
+  .menu .seg{width:100%;display:grid;grid-template-columns:1fr 1fr}
+  .menu .seg button{justify-content:center;padding:7px 10px}
+  .dayinfo{display:flex;align-items:center;justify-content:space-between;gap:8px;font-size:13px;color:var(--muted)}
+  .dayinfo b{color:var(--fg);font-weight:600}
+  .hint{display:flex;gap:8px;align-items:flex-start;background:var(--plate-soft);color:var(--plate);border-radius:10px;padding:9px 11px;font-size:13px;line-height:1.45}
+  .badge-new{font-size:11px;font-weight:600;background:var(--ok);color:#fff;border-radius:6px;padding:1px 6px;margin-left:4px}
   .icon{width:28px;height:28px;border:0;background:none;border-radius:7px;color:var(--muted);cursor:pointer;display:grid;place-items:center;font-size:16px;line-height:1}
   .icon:hover{background:var(--bad-soft);color:var(--bad)}
   .addrow{display:flex;gap:6px}
@@ -259,8 +265,14 @@
       </section>
 
       <section class="card menu">
-        <div class="card-h"><h2>เมนูวันนี้</h2><button class="btn text sm" id="copyLast" style="color:var(--fg2)">ใช้เมนูเมื่อวาน</button></div>
+        <div class="card-h"><h2>เมนู</h2><button class="btn text sm" id="copyLast" style="color:var(--fg2)">ใช้เมนูเมื่อวาน</button></div>
         <div class="card-b">
+          <div class="seg" role="group" aria-label="เลือกวันของเมนู">
+            <button data-day="today" aria-pressed="true">วันนี้ <span class="c" id="cToday">0</span></button>
+            <button data-day="tomorrow" aria-pressed="false">พรุ่งนี้ <span class="c" id="cTomorrow">0</span></button>
+          </div>
+          <div class="dayinfo"><span id="dayLabel">—</span><span id="dayNote"></span></div>
+          <div class="hint" id="tmrHint" hidden><span>🗓️</span><span>เมนูนี้จะขึ้นให้ลูกค้าเห็นเองพรุ่งนี้ ไม่ต้องรอตั้งตอนเที่ยงคืน</span></div>
           <div class="addrow">
             <input type="text" id="newItem" placeholder="เพิ่มกับข้าว เช่น แกงเขียวหวานไก่" maxlength="40">
             <button class="btn" id="addItem">เพิ่ม</button>
@@ -284,6 +296,7 @@ const $ = s => document.querySelector(s);
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 let KEY = '';
 try { KEY = localStorage.getItem('adminKey') || ''; } catch (_) {}
+let menuDay = 'today';
 let data = null, seenQueue = null, filter = 'waiting', audioCtx = null, wakeLock = null, timer = null, newSet = new Set();
 
 async function getData() {
@@ -372,6 +385,13 @@ document.addEventListener('visibilitychange', async () => {
   }
 });
 
+const TH_DAY = ['อา.', 'จ.', 'อ.', 'พ.', 'พฤ.', 'ศ.', 'ส.'], TH_MON = ['ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', 'พ.ค.', 'มิ.ย.', 'ก.ค.', 'ส.ค.', 'ก.ย.', 'ต.ค.', 'พ.ย.', 'ธ.ค.'];
+function thaiDay(ymd) {
+  if (!ymd) return '—';
+  const [y, m, dd] = ymd.split('-').map(Number), dt = new Date(y, m - 1, dd);
+  return `${TH_DAY[dt.getDay()]} ${dd} ${TH_MON[m - 1]} ${y + 543}`;
+}
+
 /* ---------- render ---------- */
 function render() {
   const d = data, s = d.settings;
@@ -402,14 +422,24 @@ function render() {
   $('#pPlate').textContent = pk['จาน'] || 0;
   $('#pBowl').textContent = pk['ถ้วย'] || 0;
 
-  // เมนู
-  $('#menu').innerHTML = d.menu.length ? d.menu.map(i => `
+  // เมนู (วันนี้ / พรุ่งนี้)
+  const tmr = menuDay === 'tomorrow';
+  const mlist = tmr ? (d.tomorrowMenu || []) : d.menu;
+  $('#cToday').textContent = d.menu.length;
+  $('#cTomorrow').textContent = (d.tomorrowMenu || []).length;
+  document.querySelectorAll('[data-day]').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.day === menuDay)));
+  $('#dayLabel').innerHTML = `<b>${thaiDay(tmr ? d.tomorrow : d.date)}</b>`;
+  $('#dayNote').textContent = tmr ? 'ตั้งล่วงหน้า' : 'ลูกค้าเห็นอยู่ตอนนี้';
+  $('#tmrHint').hidden = !tmr;
+  $('#copyLast').textContent = tmr ? 'คัดลอกจากวันนี้' : 'ใช้เมนูเมื่อวาน';
+  $('#newItem').placeholder = tmr ? 'เพิ่มกับข้าวของพรุ่งนี้' : 'เพิ่มกับข้าว เช่น แกงเขียวหวานไก่';
+  $('#menu').innerHTML = mlist.length ? mlist.map(i => `
     <div class="ln ${i.available ? '' : 'out'}">
       <button class="sw sm" role="switch" aria-checked="${i.available}" aria-label="${esc(i.name)} มีขาย" data-avail="${esc(i.name)}" data-to="${!i.available}"></button>
       <span class="name">${esc(i.name)}</span>
       <span class="muted">${i.available ? '' : 'หมด'}</span>
       <button class="icon" data-del="${esc(i.name)}" aria-label="ลบ ${esc(i.name)}">×</button>
-    </div>`).join('') : '<div class="muted">ยังไม่มีกับข้าววันนี้ เพิ่มด้านบน หรือกด "ใช้เมนูเมื่อวาน"</div>';
+    </div>`).join('') : `<div class="muted">${tmr ? 'ยังไม่ได้ตั้งเมนูพรุ่งนี้ เพิ่มด้านบน หรือกด "คัดลอกจากวันนี้"' : 'ยังไม่มีกับข้าววันนี้ เพิ่มด้านบน หรือกด "ใช้เมนูเมื่อวาน"'}</div>`;
 
   // คิว
   const active = d.orders.filter(o => o.status === 'active');
@@ -467,19 +497,20 @@ document.addEventListener('click', e => {
     newSet.delete(id);
     return act(() => post({ action: 'update_order', orderId: id, field, value }));
   }
-  if (t.dataset.avail) return act(() => post({ action: 'set_available', name: t.dataset.avail, available: t.dataset.to === 'true' }));
+  if (t.dataset.day) { menuDay = t.dataset.day; return render(); }
+  if (t.dataset.avail) return act(() => post({ action: 'set_available', name: t.dataset.avail, available: t.dataset.to === 'true', day: menuDay }));
   if (t.dataset.del) {
-    if (!confirm(`ลบ "${t.dataset.del}" ออกจากเมนูวันนี้?`)) return;
-    return act(() => post({ action: 'remove_item', name: t.dataset.del }));
+    if (!confirm(`ลบ "${t.dataset.del}" ออกจากเมนู${menuDay === 'tomorrow' ? 'พรุ่งนี้' : 'วันนี้'}?`)) return;
+    return act(() => post({ action: 'remove_item', name: t.dataset.del, day: menuDay }));
   }
 });
 $('#addItem').onclick = () => {
   const name = $('#newItem').value.trim();
   if (!name) return;
-  act(async () => { await post({ action: 'add_item', name }); $('#newItem').value = ''; $('#newItem').focus(); });
+  act(async () => { await post({ action: 'add_item', name, day: menuDay }); $('#newItem').value = ''; $('#newItem').focus(); });
 };
 $('#newItem').onkeydown = e => { if (e.key === 'Enter') $('#addItem').click(); };
-$('#copyLast').onclick = () => act(() => post({ action: 'copy_last_menu' }));
+$('#copyLast').onclick = () => act(() => post({ action: 'copy_last_menu', day: menuDay }));
 $('#toggleOpen').onclick = () => act(() => post({ action: 'set_settings', values: { open: !data.settings.open } }));
 $('#saveClose').onclick = () => {
   const open_time = $('#openTime').value, close_time = $('#closeTime').value;
