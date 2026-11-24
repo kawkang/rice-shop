@@ -57,6 +57,9 @@
   .btn.sm{padding:5px 11px;font-size:13px;border-radius:8px}
   .btn.text{background:none;border-color:transparent;color:var(--muted);padding:5px 8px}
   .btn.text:hover{color:var(--bad);background:var(--bad-soft)}
+  .btn.cancel{background:var(--surface);color:var(--bad);border-color:#f3c2c2}
+  .btn.cancel:hover{background:var(--bad-soft);border-color:var(--bad)}
+  .chip.xc{background:var(--bad-soft);color:var(--bad)}
   .btn.on{background:var(--ok-soft);color:var(--ok);border-color:transparent}
   .btn:focus-visible,input:focus-visible,.sw:focus-visible,.seg button:focus-visible{outline:2px solid var(--plate);outline-offset:2px}
 
@@ -464,14 +467,14 @@ function render() {
     <article class="${cls}">
       <div class="tk-h">
         <span class="tk-q">${o.queue}</span>
-        <span class="tk-meta">${cancelled ? '<span class="chip x">ยกเลิกแล้ว</span>' : done ? '<span class="chip done">✓ ทำแล้ว</span>' : isNew ? '<span class="chip new">ใหม่</span>' : '<span class="chip todo">รอทำ</span>'}<span class="tk-time">${esc(o.createdAt)}</span></span>
+        <span class="tk-meta">${cancelled ? (o.cancelledBy === 'customer' ? '<span class="chip xc">ลูกค้ายกเลิก</span>' : '<span class="chip x">ร้านยกเลิก</span>') : done ? '<span class="chip done">✓ ทำแล้ว</span>' : isNew ? '<span class="chip new">ใหม่</span>' : '<span class="chip todo">รอทำ</span>'}<span class="tk-time">${esc(o.createdAt)}</span></span>
       </div>
       <div class="tk-items">${rows}</div>
       ${o.note ? `<div class="note">หมายเหตุ · ${esc(o.note)}</div>` : ''}
       <div class="tk-f">
         <span class="fl"><span class="who">${esc(o.name)}</span><span class="tot">${o.total} ฿</span>${cancelled ? '' : o.paid ? `<span class="payt qr">✓ จ่าย${o.payMethod === 'qr' ? ' QR' : ''}แล้ว</span>` : o.payMethod === 'qr' ? '<span class="payt wait">⏳ รอสลิป QR</span>' : `<span class="payt cash">💵 เก็บเงิน ${o.total} ฿</span>`}</span>
         <span class="fa">
-        ${cancelled ? `<button class="btn ghost sm" data-act="status" data-id="${o.orderId}" data-val="active">คืนคิว</button>` : `<button class="btn text sm" data-act="status" data-id="${o.orderId}" data-val="cancelled">ยกเลิก</button>`}
+        ${cancelled ? `<button class="btn ghost sm" data-act="status" data-id="${o.orderId}" data-val="active">คืนคิว</button>` : `<button class="btn cancel sm" data-act="status" data-id="${o.orderId}" data-val="cancelled">✕ ยกเลิก</button>`}
         ${cancelled ? '' : done
           ? `<button class="btn undo sm" data-act="ready" data-id="${o.orderId}" data-val="false">ยังไม่เสร็จ</button>`
           : `<button class="btn ready" data-act="ready" data-id="${o.orderId}" data-val="true">ทำแล้ว</button>`}
