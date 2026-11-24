@@ -60,6 +60,19 @@
   .btn.cancel{background:var(--surface);color:var(--bad);border-color:#f3c2c2}
   .btn.cancel:hover{background:var(--bad-soft);border-color:var(--bad)}
   .chip.xc{background:var(--bad-soft);color:var(--bad)}
+  .slip{display:flex;gap:12px;align-items:center;background:#fff8e6;border:1px solid #f5dfa8;border-radius:12px;padding:10px;margin-top:10px}
+  .slipimg{padding:0;border:0;background:none;cursor:zoom-in;flex:none}
+  .slip img{width:64px;height:88px;object-fit:cover;border-radius:8px;border:1px solid var(--line);background:#fff;display:block}
+  .slink{align-self:flex-start;background:none;border:0;padding:0;color:#9a6a00;font-weight:600;font-size:13px;cursor:pointer;text-decoration:underline}
+  .viewer{position:fixed;inset:0;z-index:50;background:rgba(0,0,0,.82);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;padding:20px}
+  .viewer img{max-width:100%;max-height:82vh;border-radius:10px;background:#fff}
+  .viewer button{background:#fff;color:#111;border:0;border-radius:999px;padding:8px 22px;font-weight:600;cursor:pointer}
+  .slip .si{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px;font-size:13px;color:var(--fg2)}
+  .slip .si b{font-size:14px;color:#9a6a00}
+  .slip .sa{display:flex;flex-direction:column;gap:6px}
+  .btn.okp{background:var(--ok);border-color:var(--ok);color:#fff}
+  .btn.nop{background:var(--surface);color:var(--bad);border-color:#f3c2c2}
+  .payt.chk{background:#fff3dc;color:#b7791f}
   .btn.on{background:var(--ok-soft);color:var(--ok);border-color:transparent}
   .btn:focus-visible,input:focus-visible,.sw:focus-visible,.seg button:focus-visible{outline:2px solid var(--plate);outline-offset:2px}
 
@@ -304,6 +317,7 @@ const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt
 let KEY = '';
 try { KEY = localStorage.getItem('adminKey') || ''; } catch (_) {}
 let menuDay = 'today';
+const slipCache = new Map(), slipLoading = new Set();
 let data = null, seenQueue = null, filter = 'waiting', audioCtx = null, wakeLock = null, timer = null, newSet = new Set();
 
 async function getData() {
@@ -471,8 +485,12 @@ function render() {
       </div>
       <div class="tk-items">${rows}</div>
       ${o.note ? `<div class="note">หมายเหตุ · ${esc(o.note)}</div>` : ''}
+      ${!cancelled && o.hasSlip ? `<div class="slip">
+        <button class="slipimg" data-slip="${o.orderId}" aria-label="ดูสลิปคิว ${o.queue}"><img data-slipimg="${o.orderId}" ${slipCache.get(o.orderId) ? `src="${slipCache.get(o.orderId)}"` : ''} alt=""></button>
+        <span class="si"><b>🧾 สลิป QR ที่ลูกค้าแนบ</b><span>ยอดออเดอร์ <b style="color:var(--fg)">${o.total} ฿</b>${o.slipAt ? ` · ส่งมา ${esc(o.slipAt)} น.` : ''}</span><button class="slink" data-slip="${o.orderId}">ดูสลิปเต็ม ↗</button></span>
+      </div>` : ''}
       <div class="tk-f">
-        <span class="fl"><span class="who">${esc(o.name)}</span><span class="tot">${o.total} ฿</span>${cancelled ? '' : o.paid ? `<span class="payt qr">✓ จ่าย${o.payMethod === 'qr' ? ' QR' : ''}แล้ว</span>` : o.payMethod === 'qr' ? '<span class="payt wait">⏳ รอสลิป QR</span>' : `<span class="payt cash">💵 เก็บเงิน ${o.total} ฿</span>`}</span>
+        <span class="fl"><span class="who">${esc(o.name)}</span><span class="tot">${o.total} ฿</span>${cancelled ? '' : o.paid ? `<span class="payt qr">✓ จ่าย${o.payMethod === 'qr' ? ' QR' : ''}แล้ว</span>` : o.payMethod === 'qr' ? (o.hasSlip ? '<span class="payt chk">🧾 แนบสลิปแล้ว</span>' : '<span class="payt wait">⏳ ยังไม่แนบสลิป</span>') : `<span class="payt cash">💵 เก็บเงิน ${o.total} ฿</span>`}</span>
         <span class="fa">
         ${cancelled ? `<button class="btn ghost sm" data-act="status" data-id="${o.orderId}" data-val="active">คืนคิว</button>` : `<button class="btn cancel sm" data-act="status" data-id="${o.orderId}" data-val="cancelled">✕ ยกเลิก</button>`}
         ${cancelled ? '' : done
@@ -482,6 +500,33 @@ function render() {
       </div>
     </article>`;
   }).join('') : `<div class="empty">${filter === 'waiting' ? 'ยังไม่มีคิววันนี้' : 'ยังไม่มีออเดอร์วันนี้'}</div>`;
+  loadSlips();
+}
+
+/* ---------- สลิป QR (โหลดจาก Drive ผ่าน API ทีละใบ แล้วจำไว้) ---------- */
+async function slipImage(id) {
+  if (slipCache.has(id)) return slipCache.get(id);
+  const r = await post({ action: 'slip', orderId: id });
+  slipCache.set(id, r.image);
+  return r.image;
+}
+function loadSlips() {
+  document.querySelectorAll('img[data-slipimg]:not([src])').forEach(async img => {
+    const id = img.dataset.slipimg;
+    if (slipLoading.has(id)) return;
+    slipLoading.add(id);
+    try { const src = await slipImage(id); document.querySelectorAll(`img[data-slipimg="${id}"]`).forEach(x => x.src = src); }
+    catch (_) {} finally { slipLoading.delete(id); }
+  });
+}
+async function viewSlip(id) {
+  const v = document.createElement('div');
+  v.className = 'viewer';
+  v.innerHTML = '<span style="color:#fff">กำลังโหลดสลิป…</span><button>ปิด</button>';
+  v.onclick = e => { if (e.target === v || e.target.tagName === 'BUTTON') v.remove(); };
+  document.body.appendChild(v);
+  try { const src = await slipImage(id); v.firstElementChild.outerHTML = `<img src="${src}" alt="สลิป">`; }
+  catch (e) { v.firstElementChild.textContent = 'โหลดสลิปไม่ได้: ' + e.message; }
 }
 
 /* ---------- actions ---------- */
@@ -491,6 +536,7 @@ async function act(fn) {
 document.addEventListener('click', e => {
   const t = e.target.closest('button');
   if (!t) return;
+  if (t.dataset.slip) return viewSlip(t.dataset.slip);
   if (t.dataset.filter) {
     filter = t.dataset.filter;
     document.querySelectorAll('[data-filter]').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.filter === filter)));

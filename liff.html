@@ -7,7 +7,6 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Mali:wght@500;600;700&family=IBM+Plex+Sans+Thai+Looped:wght@400;500;600&display=swap">
 <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 <style>
   :root{
     --bg:#c3e4f6; --surface:#ffffff; --soft:#f1ecfb; --soft2:#f6f3fd; --fg:#4a4a8c; --fg2:#5f5f98; --muted:#9494bd; --line:#e6e0f5; --line2:#d3c8ee;
@@ -164,6 +163,11 @@
   .chk div{display:flex;align-items:center;gap:10px;background:var(--soft2);border-radius:14px;padding:10px 12px;font-size:14px}
   .chk b{margin-left:auto;color:var(--pri-deep)}
   .paid{display:inline-flex;align-items:center;gap:6px;background:var(--pri);color:#fff;border-radius:999px;padding:6px 16px;font-family:var(--round);font-weight:700}
+  .dsbadge{display:inline-flex;align-items:center;gap:8px;background:#21479b;color:#fff;border-radius:12px;padding:6px 14px;font-weight:700;font-size:14px}
+  .slipwrap{align-self:stretch;background:var(--surface);border:2px solid #fff;border-radius:22px;padding:12px;display:flex;justify-content:center;box-shadow:0 8px 24px rgba(90,100,170,.10)}
+  .slipwrap img{max-width:100%;max-height:360px;border-radius:12px;display:block}
+  .slipthumb{width:120px;border-radius:14px;border:3px solid #fff;box-shadow:0 6px 16px rgba(90,100,170,.18);display:block}
+  .wait{display:inline-flex;align-items:center;gap:6px;background:#fff3dc;color:#b7791f;border-radius:999px;padding:6px 16px;font-family:var(--round);font-weight:700}
   [hidden]{display:none!important}
 </style>
 </head>
@@ -301,16 +305,16 @@ function render() {
       <div class="note">${emo('📝')}<textarea id="note" rows="1" maxlength="100" placeholder="หมายเหตุ เช่น ไม่เผ็ด แยกน้ำแกง">${esc(state.note)}</textarea></div>
     </section>
     ${m.qrPay ? `<section class="card">
-      <div class="card-h"><h2>${emo('💳')} จ่ายยังไงดี</h2></div>
+      <div class="card-h"><h2>${emo('💳')} เลือกวิธีชำระเงิน</h2></div>
       <div class="payopt" role="radiogroup" aria-label="วิธีจ่ายเงิน">
-        <button role="radio" data-pay="cash" aria-checked="${state.pay === 'cash'}">${emo('💵')}จ่ายตอนรับ<small>เงินสด/โอนหน้าร้าน</small></button>
-        <button role="radio" data-pay="qr" aria-checked="${state.pay === 'qr'}">${emo('📱')}สแกนจ่าย QR<small>พร้อมเพย์ จ่ายเลย</small></button>
+        <button role="radio" data-pay="cash" aria-checked="${state.pay === 'cash'}">${emo('🏪')}ชำระที่ร้าน<small>จ่ายตอนมารับข้าว</small></button>
+        <button role="radio" data-pay="qr" aria-checked="${state.pay === 'qr'}">${emo('📱')}ชำระผ่าน QR<small>แอป Dschool · แนบสลิป</small></button>
       </div>
     </section>` : ''}`;
 
   bar.hidden = false;
   if (!m.qrPay) state.pay = 'cash';
-  $('#barInfo').textContent = state.cart.length ? `🧾 ${state.cart.length} รายการ · ${state.pay === 'qr' ? 'สแกนจ่าย QR' : 'จ่ายตอนรับข้าว'}` : 'ยังไม่มีรายการในตะกร้า';
+  $('#barInfo').textContent = state.cart.length ? `🧾 ${state.cart.length} รายการ · ${state.pay === 'qr' ? 'ชำระผ่าน QR' : 'ชำระที่ร้าน'}` : 'ยังไม่มีรายการในตะกร้า';
   $('#barTotal').textContent = cartTotal() + ' ฿';
   $('#submitBtn').disabled = !state.cart.length;
 }
@@ -368,7 +372,7 @@ $('#submitBtn').addEventListener('click', async () => {
   }
 });
 
-/* ---------- จ่ายด้วย QR พร้อมเพย์ + แนบสลิป ---------- */
+/* ---------- จ่ายผ่าน QR (Dschool) + แนบสลิป ให้ร้านตรวจเอง ---------- */
 function showPay(res, err) {
   $('#bar').hidden = true;
   $('#app').innerHTML = `
@@ -376,41 +380,51 @@ function showPay(res, err) {
       <div class="pay-h">${emo('🎉')} รับออเดอร์แล้ว · คิว <b>${esc(res.queue)}</b></div>
       ${err ? `<div class="notice" style="align-self:stretch">⚠️ ${esc(err)}</div>` : ''}
       <div class="qrcard">
-        <span class="ppbadge">PromptPay พร้อมเพย์</span>
-        <div id="qr"></div>
+        <span class="dsbadge">${emo('🏫')} Dschool · ${esc(state.menu.shopName)}</span>
+        <div id="qr"><img src="dschool-qr.png?v=1" alt="QR รับเงิน Dschool"></div>
         <div class="sub">ยอดที่ต้องจ่าย</div>
         <div class="amt">${Number(res.total).toFixed(2)} ฿</div>
-        <div class="sub" style="margin-top:-4px">${esc(state.menu.shopName)}</div>
-        <div class="steps"><span>1️⃣ แคปหน้าจอ หรือสแกนด้วยแอปธนาคาร</span><span>2️⃣ โอนตามยอด (ยอดขึ้นให้เอง)</span><span>3️⃣ กด "แนบสลิป" ด้านล่าง</span></div>
+        <div class="steps"><span>1️⃣ เปิดแอป Dschool แล้วสแกน QR นี้ (หรือแคปหน้าจอไว้)</span><span>2️⃣ ใส่ยอด <b>${res.total} บาท</b> เอง (QR นี้ไม่มียอดในตัว)</span><span>3️⃣ จ่ายเสร็จ แคปหน้าจอสลิป แล้วกด "แนบสลิป"</span></div>
       </div>
       <input type="file" id="slipFile" accept="image/*" hidden>
       <button class="btn btn-pri" id="slipBtn" style="align-self:stretch">${emo('📎')} แนบสลิป</button>
-      <button class="link" id="cashBtn">ขอจ่ายตอนรับแทน</button>
+      <button class="link" id="cashBtn">ขอชำระที่ร้านแทน</button>
     </section>`;
-  try { new QRCode($('#qr'), { text: res.qr, width: 400, height: 400, correctLevel: QRCode.CorrectLevel.M }); }
-  catch (_) { $('#qr').textContent = 'สร้าง QR ไม่ได้ กรุณาจ่ายตอนรับ'; }
   $('#slipBtn').onclick = () => $('#slipFile').click();
   $('#slipFile').onchange = async (e) => {
     const file = e.target.files && e.target.files[0];
     if (!file) return;
     const btn = $('#slipBtn');
-    btn.disabled = true; btn.textContent = 'กำลังเช็กสลิป…';
+    btn.disabled = true; btn.textContent = 'กำลังส่งสลิป…';
     try {
-      const image = await fileToJpeg(file);
-      const r = await api({ action: 'pay_qr', idToken: liff.getIDToken(), orderId: res.code, image });
+      const image = await fileToJpeg(file, 1600);
+      const r = await api({ action: 'send_slip', idToken: liff.getIDToken(), orderId: res.code, image });
       if (!r.ok) throw new Error(r.error);
       if (liff.isInClient()) {
-        try { await liff.sendMessages([{ type: 'text', text: `ชำระเงินแล้ว #${res.code}` }]); } catch (_) {}
+        try { await liff.sendMessages([{ type: 'text', text: `แนบสลิปแล้ว #${res.code}` }]); } catch (_) {}
       }
-      showPaid(res, r);
-    } catch (er) {
-      showPay(res, er.message || 'เช็กสลิปไม่สำเร็จ ลองใหม่อีกครั้ง');
-    }
+      showSent(res, image);
+    } catch (er) { showPay(res, er.message || 'ส่งสลิปไม่สำเร็จ ลองใหม่อีกครั้ง'); }
   };
   $('#cashBtn').onclick = async () => {
     try { await api({ action: 'pay_cash', idToken: liff.getIDToken(), orderId: res.code }); } catch (_) {}
     showDone(res);
   };
+}
+
+function showSent(res, image) {
+  $('#bar').hidden = true;
+  $('#app').innerHTML = `
+    <section class="done">
+      <img class="slipthumb" src="${image}" alt="สลิป">
+      <h1 style="margin-top:10px">ส่งสลิปเรียบร้อย!</h1>
+      <div class="sub">เลขคิวของคุณคือ</div>
+      <div class="queue">${esc(res.queue)}</div>
+      <span class="paid">✓ แนบสลิปแล้ว ${res.total} ฿</span>
+      <div class="sub" style="margin-top:6px">${emo('🙋')} แสดงเลขคิวนี้ตอนมารับนะ</div>
+      <button class="btn btn-pri" id="closeBtn">${emo('💬')} กลับไปที่แชท</button>
+    </section>`;
+  $('#closeBtn').addEventListener('click', () => liff.isInClient() ? liff.closeWindow() : location.reload());
 }
 
 /** ย่อรูปสลิปเป็น JPEG (ไม่เกิน 2000px) แล้วแปลงเป็น base64 */
